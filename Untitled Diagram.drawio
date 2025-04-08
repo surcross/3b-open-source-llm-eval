@@ -1,0 +1,66 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.1.1 Chrome/132.0.6834.210 Electron/34.3.3 Safari/537.36" version="26.1.1">
+  <diagram name="Page-1" id="UHb5qNxRFeluvJkuQ9R8">
+    <mxGraphModel dx="1750" dy="570" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-1" value="mongodb&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="380" y="260" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="4SIT6w2-CDRf0Yhurz84-2" target="4SIT6w2-CDRf0Yhurz84-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-4" value="select small mounts for my test.&amp;nbsp;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="4SIT6w2-CDRf0Yhurz84-3">
+          <mxGeometry x="-0.1419" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-2" value="large opensource test case group.&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="365" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-5" value="the local llms as test targets.&amp;nbsp; running base on local ollama.&amp;nbsp;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-10" y="270" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-8" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4SIT6w2-CDRf0Yhurz84-5" target="4SIT6w2-CDRf0Yhurz84-1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="320" as="sourcePoint" />
+            <mxPoint x="450" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-9" value="Text" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="4SIT6w2-CDRf0Yhurz84-8">
+          <mxGeometry x="0.0552" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-10" value="read the test case from db,&lt;br&gt;&amp;nbsp;then send to llms for llm-answer, &lt;br&gt;then send the llm-answer back to db.&amp;nbsp;&amp;nbsp;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="4SIT6w2-CDRf0Yhurz84-8">
+          <mxGeometry x="0.0266" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-11" value="the deepeval metrics&lt;br&gt;for evaluating these llms" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-12" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="4SIT6w2-CDRf0Yhurz84-1" target="4SIT6w2-CDRf0Yhurz84-11">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="320" as="sourcePoint" />
+            <mxPoint x="450" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-13" value="read the test case and llm-answer from db,&lt;br&gt;then send these to local deepeval metrics,&lt;br&gt;then deepeval evaluate the llm answers.&lt;div&gt;then give the evaluate result back to the db.&amp;nbsp;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="4SIT6w2-CDRf0Yhurz84-12">
+          <mxGeometry x="0.0059" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-14" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=1.021;exitY=0.602;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="4SIT6w2-CDRf0Yhurz84-1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="320" as="sourcePoint" />
+            <mxPoint x="680" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4SIT6w2-CDRf0Yhurz84-15" value="something like etl, for collected data&#39;s&amp;nbsp;&lt;div&gt;` visualizatoin.&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="680" y="270" width="80" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
