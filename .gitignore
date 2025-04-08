@@ -13,7 +13,10 @@
     # Keep the .gitignore file itself
     !.gitignore
     
+    # Handle the data directory specifically
+    !/data/
+    !/data/xsum_test.pkl
+    
     # Ignore specific unwanted files/dirs if they appear inside allowed dirs
     **/__pycache__/
     **/.DS_Store
-    
