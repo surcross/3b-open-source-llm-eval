@@ -1,0 +1,19 @@
+\
+    # Ignore everything by default
+    *
+    
+    # But keep these specific files and directories
+    !/deepeval_metrics/
+    !/f_/
+    !/0_readme.md
+    !/qa_data.json
+    !/Untitled Diagram.drawio
+    !/the_structure.png
+    
+    # Keep the .gitignore file itself
+    !.gitignore
+    
+    # Ignore specific unwanted files/dirs if they appear inside allowed dirs
+    **/__pycache__/
+    **/.DS_Store
+    
