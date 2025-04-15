@@ -58,7 +58,7 @@ try:
     total_samples = len(ds)   #还是那个问题,我不知道ds长什么样. 
     
     # Set target number of documents we want in the collection
-    TARGET_DOCUMENT_COUNT = 50
+    TARGET_DOCUMENT_COUNT = 100
     
     # Loop until we reach the target count
     
@@ -80,10 +80,10 @@ try:
             print(f"Skipping duplicate document")
             continue
         
-        # Create document with required fields
+        # Create document with required fields - only include context
         document = {
-            "context": sample["document"],  # The full document text
-            "llm_answer": ""              # Empty field to be filled later
+            "context": sample["document"]  # The full document text
+            # No empty llm_answer field - will be added when needed by query script
         }
         
         # Insert into MongoDB
@@ -104,7 +104,7 @@ try:
     if sample_doc:
         print(f"_id: {sample_doc['_id']}")
         print(f"context: {sample_doc['context'][:100]}... (truncated)")
-        print(f"llm_answer: {sample_doc['llm_answer']}")
+
         
 except Exception as e:
     print(f"Error loading dataset or importing data: {e}")

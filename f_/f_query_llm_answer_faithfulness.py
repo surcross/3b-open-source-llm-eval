@@ -2,6 +2,10 @@
 from pymongo import MongoClient  # For connecting to MongoDB database
 import requests  # For making HTTP requests to Ollama
 import re  # For regular expressions to clean up responses
+import argparse  # For command line arguments
+import sys  # For accessing script arguments
+sys.path.append('/home/ks/Desktop/project/test_llm')  # Add parent directory to path
+from config import DEFAULT_MODEL  # Import default model from config
 
 # Step 1: Connect to MongoDB
 # This creates a connection to the MongoDB running on your computer
@@ -9,12 +13,26 @@ client = MongoClient('mongodb://localhost:27018/')  # Connect to MongoDB at loca
 db = client['rag_evaluation']  # Select the 'rag_evaluation' database
 collection = db['faithfulness_tests']  # Select the 'faithfulness_tests' collection
 
-# Step 2: Get questions from MongoDB that don't have llm_answer yet
+# Parse command line arguments  #属于是整了个类玩玩.
+parser = argparse.ArgumentParser(description='Query LLM for faithfulness evaluation')
+parser.add_argument('--model', type=str, default=DEFAULT_MODEL, help=f'Model to use (default: {DEFAULT_MODEL})')  #python是好文明
+args = parser.parse_args()
+
+# Display which model we're using
+print(f"Using model: {args.model}")
+
+# Step 2: Get questions from MongoDB that don't have llm_answer for the selected model yet
 print("Getting faithfulness questions from database...")
 questions = []  # Create an empty list to store our questions . #no need but good. i like this . 
 for doc in collection.find():  # Loop through each document in the collection   
-    # Skip documents that already have an llm_answer
-    if "llm_answer" in doc and doc["llm_answer"]:
+    # Field name for this model's answer - need to handle the model name correctly
+    # MongoDB has issues with field names containing special characters
+    # Convert deepseek-r1:1.5b to llm_answer_deepseek-r1_1_5b
+    safe_model_name = args.model.replace(':', '_').replace('.', '_')
+    model_answer_field = f"llm_answer_{safe_model_name}"   #为了赋值带变量的string 
+    
+    # Skip documents that already have an answer for this model
+    if model_answer_field in doc and doc[model_answer_field]:
         continue
     
     # Add each question, its context, and document ID to our list
@@ -60,7 +78,7 @@ Answer:"""
         response = requests.post(
             "http://localhost:11434/api/generate",  # Ollama API URL
             json={
-                "model": "deepseek-r1:1.5b",  # The model to use
+                "model": args.model,  # The model to use from command line args or default
                 "prompt": prompt,  # Our question prompt
                 "stream": False  # Get the full response at once, not streamed
             }
@@ -79,10 +97,14 @@ Answer:"""
             print("Answer:")
             print(clean_answer)
             
-            # Step 8: Save the answer back to MongoDB
+            # Step 8: Save the answer back to MongoDB with model-specific field name
+            # MongoDB has issues with field names containing special characters
+            # Convert deepseek-r1:1.5b to llm_answer_deepseek-r1_1_5b
+            safe_model_name = args.model.replace(':', '_').replace('.', '_')
+            model_answer_field = f"llm_answer_{safe_model_name}"
             collection.update_one(
                 {"_id": q["_id"]},  # Find the document by its ID
-                {"$set": {"llm_answer": clean_answer}}  # Add/update the llm_answer field
+                {"$set": {model_answer_field: clean_answer}}  # Add/update the model-specific answer field
             )
             print("✓ Answer saved to database")
             
@@ -98,5 +120,5 @@ Answer:"""
     print("-" * 50)
 
 # Print completion message
-print("All faithfulness questions processed and saved to MongoDB.")
+print(f"All faithfulness questions processed and saved to MongoDB using model {args.model}.")
 #beautiful structure. it is wonderful.

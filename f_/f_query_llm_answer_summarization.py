@@ -2,18 +2,35 @@
 from pymongo import MongoClient
 import requests
 import re  # For regular expressions to clean up responses
+import argparse  # For command line arguments
+import sys  # For accessing script arguments
+sys.path.append('/home/ks/Desktop/project/test_llm')  # Add parent directory to path
+from config import DEFAULT_MODEL  # Import default model from config
 
 # Connect to MongoDB
 client = MongoClient('mongodb://localhost:27018/')
 db = client['rag_evaluation']  # Use the same database as hallucination example
 collection = db['summarization_tests']  # Using summarization collection
 
-# Get documents without llm_answer
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Query LLM for summarization evaluation')
+parser.add_argument('--model', type=str, default=DEFAULT_MODEL, help=f'Model to use (default: {DEFAULT_MODEL})')
+args = parser.parse_args()
+
+# Display which model we're using
+print(f"Using model: {args.model}")
+
+# Get documents without llm_answer for the selected model
 print("Getting documents from database...")
 questions = []
 for doc in collection.find():
-    # Skip if llm_answer already exists and is not empty
-    if "llm_answer" in doc and doc["llm_answer"] and doc["llm_answer"].strip():
+    # Field name for this model's answer - need to handle special characters
+    # MongoDB has issues with field names containing : and .
+    safe_model_name = args.model.replace(':', '_').replace('.', '_')
+    model_answer_field = f"llm_answer_{safe_model_name}"
+    
+    # Skip if model-specific answer already exists
+    if model_answer_field in doc:
         continue
     
     # For summarization collection, there is just context and no input field
@@ -47,7 +64,7 @@ Summary:"""
         response = requests.post(
             "http://localhost:11434/api/generate",
             json={
-                "model": "deepseek-r1:1.5b",
+                "model": args.model,
                 "prompt": prompt,
                 "stream": False
             }
@@ -65,10 +82,13 @@ Summary:"""
             # Display summary
             print(f"Summary: {clean_answer[:50]}..." if len(clean_answer) > 50 else f"Summary: {clean_answer}")
             
-            # Save to MongoDB
+            # Save to MongoDB with model-specific field name
+            # MongoDB has issues with field names containing : and .
+            safe_model_name = args.model.replace(':', '_').replace('.', '_')
+            model_answer_field = f"llm_answer_{safe_model_name}"
             collection.update_one(
                 {"_id": q["_id"]},
-                {"$set": {"llm_answer": clean_answer}}
+                {"$set": {model_answer_field: clean_answer}}
             )
             print("✓ Summary saved to database")
         else:
@@ -79,4 +99,4 @@ Summary:"""
     
     print("-" * 50)
 
-print("All questions processed and summaries saved to MongoDB.")
+print(f"All questions processed and summaries saved to MongoDB using model {args.model}.")
