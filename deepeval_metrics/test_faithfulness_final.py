@@ -1,8 +1,14 @@
 from pymongo import MongoClient
 from bson import ObjectId
 import json
+import sys
+import argparse
 from deepeval.metrics import FaithfulnessMetric
 from deepeval.test_case import LLMTestCase
+
+# Add parent directory to path to import config
+sys.path.append('/home/ks/Desktop/project/test_llm')
+from config import DEFAULT_MODEL
 
 # Custom JSON encoder to handle MongoDB ObjectId
 class MongoJSONEncoder(json.JSONEncoder):
@@ -12,26 +18,33 @@ class MongoJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 # Get test cases from MongoDB
-def get_test_cases():
+def get_test_cases(model):
     client = MongoClient('mongodb://localhost:27018/')
     db = client['rag_evaluation']
     collection = db['faithfulness_tests']
     
+    # Convert model name to MongoDB-friendly format
+    safe_model_name = model.replace(':', '_').replace('.', '_')
+    answer_field = f"llm_answer_{safe_model_name}"
+    score_field = f"faithfulness_score_{safe_model_name}"
+    
     test_cases = []
     for doc in collection.find():
-        # Skip test cases that have already been evaluated
-        if "faithfulness_score" in doc:
+        # Skip test cases that have already been evaluated for this model
+        if score_field in doc:
             continue
             
-        # Skip test cases without answers
-        if not doc.get("llm_answer"):
+        # Skip test cases without answers for this model
+        if not doc.get(answer_field):
             continue
             
         test_cases.append({
             "input": doc["input"],
             "context": doc["context"],
-            "llm_answer": doc.get("llm_answer", ""),
-            "_id": doc["_id"]
+            "llm_answer": doc.get(answer_field, ""),
+            "_id": doc["_id"],
+            "model": model,
+            "safe_model_name": safe_model_name
         })
     
     print(f"Found {len(test_cases)} test cases that need faithfulness evaluation")
@@ -43,7 +56,7 @@ def get_test_cases():
 # No custom model needed - DeepEval will use the model set with `deepeval set-ollama` command
 
 # Evaluate faithfulness using deepeval
-def evaluate_faithfulness(test_case):
+def evaluate_faithfulness(test_case, model):
     # Create a deepeval LLMTestCase with retrieval context
     # Format context properly (could be a list or string)
     if isinstance(test_case["context"], list):
@@ -69,31 +82,44 @@ def evaluate_faithfulness(test_case):
         return 0.5, f"Error evaluating: {str(e)}"
 
 # Save results back to MongoDB
-def save_results(test_id, faithfulness_score, faithfulness_reason):
+def save_results(test_id, faithfulness_score, faithfulness_reason, model):
     client = MongoClient('mongodb://localhost:27018/')
     db = client['rag_evaluation']
     collection = db['faithfulness_tests']
+    
+    # Convert model name to MongoDB-friendly format
+    safe_model_name = model.replace(':', '_').replace('.', '_')
+    score_field = f"faithfulness_score_{safe_model_name}"
+    reason_field = f"faithfulness_reason_{safe_model_name}"
     
     # Update the document with the evaluation results
     collection.update_one(
         {"_id": test_id},
         {"$set": {
-            "faithfulness_score": faithfulness_score,
-            "faithfulness_reason": faithfulness_reason
+            score_field: faithfulness_score,
+            reason_field: faithfulness_reason
         }}
     )
 
 # Main function
 if __name__ == "__main__":
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Evaluate faithfulness for LLM answers')
+    parser.add_argument('--model', type=str, default=DEFAULT_MODEL, 
+                        help=f'Model to evaluate (default: {DEFAULT_MODEL})')
+    args = parser.parse_args()
+    
+    print(f"Evaluating faithfulness for model: {args.model}")
+    
     # Get test cases from MongoDB that need evaluation
-    test_cases = get_test_cases()
+    test_cases = get_test_cases(args.model)
     
     # Process each test case
     for i, test in enumerate(test_cases, 1):
         print(f"\nEvaluating Test Case {i}/{len(test_cases)}: {test['input']}")
         
         # Evaluate faithfulness using deepeval
-        faithfulness_score, faithfulness_reason = evaluate_faithfulness(test)
+        faithfulness_score, faithfulness_reason = evaluate_faithfulness(test, test['model'])
         
         # Print results
         print(f"Answer: {test['llm_answer']}")
@@ -101,7 +127,7 @@ if __name__ == "__main__":
         print(f"Faithfulness Reason: {faithfulness_reason}")
         
         # Save results back to MongoDB
-        save_results(test["_id"], faithfulness_score, faithfulness_reason)
+        save_results(test["_id"], faithfulness_score, faithfulness_reason, test['model'])
         print(f"✓ Results saved to database")
     
     print("\nFaithfulness evaluation completed for all test cases.")
