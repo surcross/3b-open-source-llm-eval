@@ -2,16 +2,45 @@ from pymongo import MongoClient
 from deepeval.metrics.hallucination.hallucination import HallucinationMetric
 from deepeval.test_case import LLMTestCase
 import os
+import sys
+import argparse
+
+# Add parent directory to path to import config
+sys.path.append('/home/ks/Desktop/project/test_llm')
+from config import DEFAULT_MODEL
 
 # Function to get test cases from MongoDB
-def get_test_cases():
+def get_test_cases(model):
     client = MongoClient('mongodb://localhost:27018/')
     db = client['rag_evaluation']
     collection = db['hallucination_tests']
     
-    # Retrieve test cases with context and answers
-    test_cases = list(collection.find({}))
-    print(f"Found {len(test_cases)} test cases in the database")
+    # Convert model name to MongoDB-friendly format
+    safe_model_name = model.replace(':', '_').replace('.', '_')
+    answer_field = f"llm_answer_{safe_model_name}"
+    score_field = f"hallucination_score_{safe_model_name}"
+    
+    # Build a list of test cases
+    test_cases = []
+    for doc in collection.find():
+        # Skip test cases that have already been evaluated for this model
+        if score_field in doc:
+            continue
+            
+        # Skip test cases without answers for this model
+        if not doc.get(answer_field):
+            continue
+            
+        test_cases.append({
+            "input": doc["input"],
+            "context": doc["context"],
+            "llm_answer": doc.get(answer_field, ""),
+            "_id": doc["_id"],
+            "model": model,
+            "safe_model_name": safe_model_name
+        })
+    
+    print(f"Found {len(test_cases)} test cases that need hallucination evaluation for model: {model}")
     
     # Print a sample document structure
     if test_cases:
@@ -21,7 +50,7 @@ def get_test_cases():
 
 
 # Evaluate hallucination using deepeval with Ollama model
-def evaluate_hallucination(test_case):
+def evaluate_hallucination(test_case, model):
     # Create a deepeval LLMTestCase
     llm_test_case = LLMTestCase(
         input=test_case["input"],
@@ -42,17 +71,22 @@ def evaluate_hallucination(test_case):
         return 0.5, f"Error evaluating: {str(e)}"
 
 # Save results back to MongoDB
-def save_results(test_id, hallucination_score, hallucination_reason):
+def save_results(test_id, hallucination_score, hallucination_reason, model):
     client = MongoClient('mongodb://localhost:27018/')
     db = client['rag_evaluation']
     collection = db['hallucination_tests']
+    
+    # Convert model name to MongoDB-friendly format
+    safe_model_name = model.replace(':', '_').replace('.', '_')
+    score_field = f"hallucination_score_{safe_model_name}"
+    reason_field = f"hallucination_reason_{safe_model_name}"
     
     # Update the document with the evaluation results
     collection.update_one(
         {"_id": test_id},
         {"$set": {
-            "hallucination_score": hallucination_score,
-            "hallucination_reason": hallucination_reason
+            score_field: hallucination_score,
+            reason_field: hallucination_reason
         }}
     )
 
@@ -62,23 +96,22 @@ if __name__ == "__main__":
     # deepeval set-ollama gemma3:4b
     # If you haven't done this yet, you'll need to run it in your terminal first
     
-    # Get test cases from MongoDB
-    test_cases = get_test_cases()
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Evaluate hallucination for LLM answers')
+    parser.add_argument('--model', type=str, default=DEFAULT_MODEL, 
+                        help=f'Model to evaluate (default: {DEFAULT_MODEL})')
+    args = parser.parse_args()
     
-    # Process each test case  看多了就眼熟了. 
+    print(f"Evaluating hallucination for model: {args.model}")
+    
+    # Get test cases from MongoDB
+    test_cases = get_test_cases(args.model)
+    
+    # Process each test case
     for i, test in enumerate(test_cases, 1):
-        # Skip test cases without answers
-        if not test.get("llm_answer"):
-            print(f"\nSkipping Test Case {i} (no answer available): {test['input']}")
-            continue
-            
-        # Skip test cases that already have evaluation results
-        if "hallucination_score" in test and "hallucination_reason" in test:
-            print(f"\nSkipping Test Case {i} (already evaluated): {test['input']}")
-            continue
         
         # Evaluate hallucination using deepeval    tuple 类型的赋值方式
-        hallucination_score, hallucination_reason = evaluate_hallucination(test)
+        hallucination_score, hallucination_reason = evaluate_hallucination(test, test['model'])
         
         # Print results
         print(f"\nTest Case {i}: {test['input']}")
@@ -88,4 +121,4 @@ if __name__ == "__main__":
         print(f"Hallucination Reason: {hallucination_reason}")
         
         # Save results back to MongoDB
-        save_results(test["_id"], hallucination_score, hallucination_reason)
+        save_results(test["_id"], hallucination_score, hallucination_reason, test['model'])
