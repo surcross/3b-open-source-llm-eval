@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-05-04 11:32:48",
+  "collections": [
+    "faithfulness_tests",
+    "contextual_relevancy_tests",
+    "summarization_tests",
+    "toxicity_tests",
+    "bias_tests",
+    "hallucination_tests"
+  ],
+  "collection_counts": {
+    "faithfulness_tests": 35,
+    "contextual_relevancy_tests": 35,
+    "summarization_tests": 35,
+    "toxicity_tests": 35,
+    "bias_tests": 35,
+    "hallucination_tests": 40
+  }
+}
